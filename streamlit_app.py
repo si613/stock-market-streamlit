@@ -135,11 +135,26 @@ if symbol:
 
     st.header('📉 RSI and MFI Charts')
     st.line_chart(price.set_index('Date')[['RSI']])
+    st.subheader("📘 Interpretation Guide")
+    st.markdown("""
+    - **RSI (Relative Strength Index)** is a momentum indicator.
+    - It ranges from 0 to 100.
+    - **RSI below 30** suggests the stock may be **oversold** (undervalued).
+    - **RSI above 70** suggests the stock may be **overbought** (overvalued).
+    - Traders use RSI to identify potential trend reversals.
+    """)
     st.line_chart(price.set_index('Date')[['MFI']])
+    st.subheader("📘 Interpretation Guide")
+    st.markdown("""
+    - **MFI (Money Flow Index)** uses both price and volume.
+    - Also ranges from 0 to 100.
+    - **MFI below 20** may indicate oversold, **above 80** may indicate overbought.
+    - MFI is helpful for validating RSI signals with volume confirmation.
+    """)
 
     st.header('📊 Key Financial Ratios')
-    ratios = fetch_key_ratios(symbol)
-    st.dataframe(pd.DataFrame(ratios.items(), columns=['Metric', 'Value']).set_index('Metric'))
+    st.markdown(f"### 📌 Financial Ratios for: `{symbol.upper()}`")
+    st.dataframe(pd.DataFrame(ratios.items(), columns=['Metric', 'Value']).style.set_properties(**{'text-align': 'left'}).set_table_styles([{ 'selector': 'th', 'props': [('text-align', 'left')]}]))
 
     symbols = st.text_input("Enter symbols separated by commas:", "AAPL,MSFT,GOOGL")
     if symbols:
@@ -155,6 +170,7 @@ if symbol:
             except:
                 continue
         if df_list:
+            st.markdown("### 📌 Comparison Across Multiple Companies")
             compare_df = pd.DataFrame(df_list)
             st.dataframe(compare_df.set_index("Symbol"))
 
@@ -165,7 +181,8 @@ if symbol:
     view = st.radio("Select View:", ["Quarterly", "Annual"], horizontal=True)
     if view == 'Quarterly':
         fin = fetch_quarterly_financials(symbol).rename_axis('Quarter').reset_index()
-        bar_size = 30
+        fin = fin.tail(4)
+        bar_size = 50
     else:
         fin = fetch_annual_financials(symbol).rename_axis('Year').reset_index()
         fin[fin.columns[0]] = fin[fin.columns[0]].astype(str).str[:4]
@@ -180,20 +197,17 @@ if symbol:
     with cols[1]:
         st.subheader("Net Income")
         if 'Net Income' in fin.columns:
-            st.altair_chart(alt.Chart(fin).mark_bar(size=bar_size, color="#ff7f0e").encode(x=alt.X(time_col, sort=None), y='Net Income').properties(height=300), use_container_width=True)
-    with cols[1]:
-        st.subheader("Net Income")
-        if 'Net Income' in fin.columns:
-            st.altair_chart(alt.Chart(fin).mark_bar(color="#ff7f0e").encode(x=alt.X(time_col, sort=None), y='Net Income').properties(height=300), use_container_width=True)
+            st.altair_chart(alt.Chart(fin).mark_bar(size=bar_size, color="#ff7f0e").encode(x=alt.X(time_col, sort=None), y='Net Income').properties(height=300), use_container_width=True).mark_bar(color="#ff7f0e").encode(x=alt.X(time_col, sort=None), y='Net Income').properties(height=300), use_container_width=True)
 
     st.subheader("📘 Interpretation Guide")
     st.markdown("""Track how revenue and income evolve. Declines may signal trouble; growth shows strength.""")
 
     st.header('💸 Dividends')
     div = fetch_dividends(symbol)
-    if not div.empty:
-        div_min, div_max = div['Date'].min(), div['Date'].max()
-        div_range = st.date_input("Select dividend date range:", (div_min.date(), div_max.date()), min_value=div_min.date(), max_value=div_max.date(), key="div")
+    ten_years_ago = pd.to_datetime(datetime.now() - pd.DateOffset(years=10))
+    div = div[div['Date'] >= ten_years_ago]
+    div_min, div_max = div['Date'].min(), div['Date'].max()
+    div_range = st.date_input("Select dividend date range:", (div_min.date(), div_max.date()), min_value=div_min.date(), max_value=div_max.date(), key="div"), div_max.date()), min_value=div_min.date(), max_value=div_max.date(), key="div")
         if isinstance(div_range, tuple) and len(div_range) == 2:
             div = div[(div['Date'] >= pd.to_datetime(div_range[0], utc=True)) & (div['Date'] <= pd.to_datetime(div_range[1], utc=True))]
             st.altair_chart(alt.Chart(div).mark_bar(color="#2ca02c").encode(x='Date:T', y='Dividends:Q').properties(height=300), use_container_width=True)
