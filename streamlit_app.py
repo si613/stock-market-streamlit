@@ -3,6 +3,7 @@ import yfinance as yf
 import altair as alt
 import plotly.graph_objects as go
 import pandas as pd
+from datetime import datetime, timedelta
 
 st.set_page_config(layout="wide", page_title="Stock Analysis Dashboard", initial_sidebar_state="expanded")
 st.markdown("""
@@ -27,7 +28,7 @@ def fetch_annual_financials(symbol):
 
 @st.cache_data
 def fetch_weekly_price_history(symbol):
-    return yf.Ticker(symbol).history(period='1y', interval='1wk')
+    return yf.Ticker(symbol).history(period='5y', interval='1wk')
 
 @st.cache_data
 def fetch_dividends(symbol):
@@ -72,6 +73,7 @@ if symbol:
     """)
 
     price_history = fetch_weekly_price_history(symbol).rename_axis('Date').reset_index()
+    price_history = price_history[price_history['Date'] >= datetime.today() - timedelta(weeks=52*5)]
 
     st.header('📈 Price History & Candlestick Chart')
     candle_chart = go.Figure(data=[
@@ -85,7 +87,18 @@ if symbol:
             decreasing_line_color='red'
         )
     ])
-    candle_chart.update_layout(template="plotly_white", xaxis_rangeslider_visible=False)
+    candle_chart.update_layout(
+        template="plotly_white",
+        xaxis_rangeslider_visible=True,
+        xaxis=dict(rangeselector=dict(
+            buttons=list([
+                dict(count=3, label="3m", step="month", stepmode="backward"),
+                dict(count=6, label="6m", step="month", stepmode="backward"),
+                dict(count=1, label="1y", step="year", stepmode="backward"),
+                dict(step="all")
+            ])
+        ))
+    )
     st.plotly_chart(candle_chart, use_container_width=True)
 
     st.header('📊 Financial Performance')
@@ -122,6 +135,7 @@ if symbol:
     dividends = fetch_dividends(symbol)
     if not dividends.empty:
         dividends = dividends.reset_index()
+        dividends = dividends[dividends['Date'] >= datetime.today() - timedelta(weeks=52*5)]
         dividend_chart = alt.Chart(dividends).mark_bar(color="#2ca02c").encode(
             x='Date:T',
             y='Dividends:Q'
@@ -132,8 +146,8 @@ if symbol:
 
     st.header('📉 Earnings Performance')
     earnings = fetch_earnings(symbol)
-    if not earnings.empty:
-        earnings = earnings.reset_index()
+    if earnings is not None and not earnings.empty:
+        earnings = earnings.tail(5).reset_index()
         earnings_chart = alt.Chart(earnings).transform_fold(
             ['Earnings', 'Revenue'],
             as_=['Metric', 'Value']
@@ -149,7 +163,7 @@ if symbol:
     st.header('📂 Balance Sheet Snapshot')
     balance = fetch_balance_sheet(symbol)
     if not balance.empty:
-        balance = balance.reset_index().rename(columns={'index': 'Date'})
+        balance = balance.tail(5).reset_index().rename(columns={'index': 'Date'})
         key_cols = ['Total Assets', 'Total Liab', 'Total Stockholder Equity']
         available_cols = [col for col in key_cols if col in balance.columns]
         balance_long = balance.melt(id_vars='Date', value_vars=available_cols)
