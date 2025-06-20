@@ -109,6 +109,8 @@ if symbol:
     - A **green candle** means the stock closed higher than it opened — a bullish signal.
     - A **red candle** means the stock closed lower than it opened — a bearish signal.
     - The **wicks** show the high and low prices during that week.
+    
+    
     ---
     """)
 
@@ -127,6 +129,8 @@ if symbol:
     - **MA50** reflects the medium-term trend (approx 2.5 months).
     - When the short-term MA crosses above the long-term MA, it’s a bullish signal (called a **Golden Cross**).
     - When it crosses below, it’s bearish (called a **Death Cross**).
+   
+    
     ---
     """)
 
@@ -149,6 +153,8 @@ if symbol:
     - Also ranges from 0 to 100.
     - **MFI below 20** may indicate oversold, **above 80** may indicate overbought.
     - MFI is helpful for validating RSI signals with volume confirmation.
+    
+    
     ---
     """)
 
@@ -178,6 +184,8 @@ if symbol:
 
     st.subheader("📘 Interpretation Guide")
     st.markdown("""Track how revenue and income evolve. Declines may signal trouble; growth shows strength.
+    
+    
     ---
     """)
 
@@ -230,8 +238,11 @@ else:
 st.subheader("📘 Interpretation Guide")
 st.markdown("""
 Dividends reward shareholders. Consistent or growing dividends reflect financial health and shareholder commitment.
+
+
 ---
 """)
+
 
 # Display financial ratios for the main stock
 st.header('📊 Key Financial Ratios')
@@ -274,8 +285,6 @@ if symbols:
     ### 📘 Interpretation Guide: Key Financial Ratios
     
     These ratios help assess a company's **valuation**, **profitability**, and **financial strength**.
-    
-    ---
     
     #### 🔹 **PE Ratio (Price-to-Earnings)**
     - Shows how much investors pay for ₹1 of earnings. 
