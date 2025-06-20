@@ -70,8 +70,6 @@ if symbol:
     st.markdown(f"**Market Cap:** {info.get('marketCap', 0):,}")
     st.markdown(f"**Website:** [{info.get('website', '')}]({info.get('website', '')})")
 
-    st.subheader("📘 Interpretation Guide")
-    st.markdown("""These details give you a quick snapshot of what the company does, what sector it operates in, and the currency in which it's traded.""")
 
     price = fetch_weekly_price_history(symbol)
     price['MA20'] = price['Close'].rolling(window=20).mean()
@@ -111,6 +109,7 @@ if symbol:
     - A **green candle** means the stock closed higher than it opened — a bullish signal.
     - A **red candle** means the stock closed lower than it opened — a bearish signal.
     - The **wicks** show the high and low prices during that week.
+    ---
     """)
 
     st.header('📉 Moving Averages')
@@ -128,12 +127,10 @@ if symbol:
     - **MA50** reflects the medium-term trend (approx 2.5 months).
     - When the short-term MA crosses above the long-term MA, it’s a bullish signal (called a **Golden Cross**).
     - When it crosses below, it’s bearish (called a **Death Cross**).
+    ---
     """)
 
-    st.subheader("📘 Interpretation Guide")
-    st.markdown("""MA lines smooth out price to highlight trends. RSI below 30 may mean oversold; above 70, overbought. MFI adds volume into the mix for stronger signals.""")
-
-    st.header('📉 RSI and MFI Charts')
+    st.header('📉 RSI Chart')
     st.line_chart(price.set_index('Date')[['RSI']])
     st.subheader("📘 Interpretation Guide")
     st.markdown("""
@@ -143,6 +140,8 @@ if symbol:
     - **RSI above 70** suggests the stock may be **overbought** (overvalued).
     - Traders use RSI to identify potential trend reversals.
     """)
+
+    st.header('📉 MFI Chart')
     st.line_chart(price.set_index('Date')[['MFI']])
     st.subheader("📘 Interpretation Guide")
     st.markdown("""
@@ -150,82 +149,8 @@ if symbol:
     - Also ranges from 0 to 100.
     - **MFI below 20** may indicate oversold, **above 80** may indicate overbought.
     - MFI is helpful for validating RSI signals with volume confirmation.
+    ---
     """)
-
-# Display financial ratios for the main stock
-st.header('📊 Key Financial Ratios')
-st.markdown(f"### 📌 Financial Ratios for: `{symbol.upper()}`")
-ratios = fetch_key_ratios(symbol)
-styled_ratios = (
-    pd.DataFrame(ratios.items(), columns=['Metric', 'Value'])
-    .style
-    .set_table_styles([
-        {'selector': 'th', 'props': [('text-align', 'left'), ('padding', '4px 8px')]},
-        {'selector': 'td', 'props': [('text-align', 'left'), ('padding', '4px 8px')]}
-    ])
-    .set_properties(**{'width': '120px', 'text-align': 'left'})
-)
-
-st.dataframe(styled_ratios)
-
-# Input and comparison for multiple companies
-st.markdown("### 📌 Comparison Across Multiple Companies")
-symbols = st.text_input("Enter symbols separated by commas:", "AAPL,MSFT,GOOGL")
-if symbols:
-    symbol_list = [s.strip().upper() for s in symbols.split(",") if s.strip()]
-    df_list = []
-    for sym in symbol_list:
-        try:
-            info = fetch_stock_info(sym)
-            ratios = fetch_key_ratios(sym)
-            row = {"Symbol": sym, "Name": info.get("shortName", sym)}
-            row.update(ratios)
-            df_list.append(row)
-        except:
-            continue
-
-    if df_list:
-        compare_df = pd.DataFrame(df_list)
-        st.dataframe(compare_df.set_index("Symbol"))
-
-
-    st.subheader("📘 Interpretation Guide")
-    
-    st.markdown("""
-    ### 📘 Interpretation Guide: Key Financial Ratios
-    
-    These ratios help assess a company's **valuation**, **profitability**, and **financial strength**.
-    
-    ---
-    
-    #### 🔹 **PE Ratio (Price-to-Earnings)**
-    - Shows how much investors pay for ₹1 of earnings.
-    - **Lower PE** → May indicate **undervaluation**.
-    - **Higher PE** → Market expects growth or the stock may be **overvalued**.
-    
-    #### 🔹 **PB Ratio (Price-to-Book)**
-    - Compares market price to the company's net asset value.
-    - **PB < 1** → Possibly **undervalued**.
-    - **PB > 3** → May suggest **growth potential** or **overvaluation**.
-    
-    #### 🔹 **ROE (Return on Equity)**
-    - Measures how efficiently a company uses shareholder funds.
-    - **ROE > 15%** → Indicates strong **profitability**.
-    - **Low/Negative ROE** → Signals inefficiency or **losses**.
-    
-    #### 🔹 **Debt-to-Equity Ratio**
-    - Compares company debt to shareholder equity.
-    - **< 1** → Company is using **less leverage** (financially safer).
-    - **> 2** → Heavily reliant on **debt**, potentially risky.
-    
-    #### 🔹 **Current Ratio**
-    - Indicates ability to pay short-term obligations.
-    - **> 1** → Good **liquidity**.
-    - **< 1** → May struggle to cover short-term liabilities.
-    
-    ---
-    """, unsafe_allow_html=True)
-
 
     
     st.header('📊 Financial Performance')
@@ -252,7 +177,9 @@ if symbols:
 
 
     st.subheader("📘 Interpretation Guide")
-    st.markdown("""Track how revenue and income evolve. Declines may signal trouble; growth shows strength.""")
+    st.markdown("""Track how revenue and income evolve. Declines may signal trouble; growth shows strength.
+    ---
+    """)
 
 st.header('💸 Dividends')
 div = fetch_dividends(symbol)
@@ -303,4 +230,76 @@ else:
 st.subheader("📘 Interpretation Guide")
 st.markdown("""
 Dividends reward shareholders. Consistent or growing dividends reflect financial health and shareholder commitment.
+---
 """)
+
+# Display financial ratios for the main stock
+st.header('📊 Key Financial Ratios')
+st.markdown(f"### 📌 Financial Ratios for: `{symbol.upper()}`")
+ratios = fetch_key_ratios(symbol)
+styled_ratios = (
+    pd.DataFrame(ratios.items(), columns=['Metric', 'Value'])
+    .style
+    .set_table_styles([
+        {'selector': 'th', 'props': [('text-align', 'left'), ('padding', '4px 8px')]},
+        {'selector': 'td', 'props': [('text-align', 'left'), ('padding', '4px 8px')]}
+    ])
+    .set_properties(**{'width': '120px', 'text-align': 'left'})
+)
+
+st.dataframe(styled_ratios)
+
+# Input and comparison for multiple companies
+st.markdown("### 📌 Comparison Across Multiple Companies")
+symbols = st.text_input("Enter symbols separated by commas:", "AAPL,MSFT,GOOGL")
+if symbols:
+    symbol_list = [s.strip().upper() for s in symbols.split(",") if s.strip()]
+    df_list = []
+    for sym in symbol_list:
+        try:
+            info = fetch_stock_info(sym)
+            ratios = fetch_key_ratios(sym)
+            row = {"Symbol": sym, "Name": info.get("shortName", sym)}
+            row.update(ratios)
+            df_list.append(row)
+        except:
+            continue
+
+    if df_list:
+        compare_df = pd.DataFrame(df_list)
+        st.dataframe(compare_df.set_index("Symbol"))
+
+    
+    st.markdown("""
+    ### 📘 Interpretation Guide: Key Financial Ratios
+    
+    These ratios help assess a company's **valuation**, **profitability**, and **financial strength**.
+    
+    ---
+    
+    #### 🔹 **PE Ratio (Price-to-Earnings)**
+    - Shows how much investors pay for ₹1 of earnings. 
+    - **Lower PE** → May indicate **undervaluation**. **Higher PE** → Market expects growth or the stock may be **overvalued**.
+    
+    #### 🔹 **PB Ratio (Price-to-Book)**
+    - Compares market price to the company's net asset value.
+    - **PB < 1** → Possibly **undervalued**. **PB > 3** → May suggest **growth potential** or **overvaluation**.
+    
+    #### 🔹 **ROE (Return on Equity)**
+    - Measures how efficiently a company uses shareholder funds.
+    - **ROE > 15%** → Indicates strong **profitability**.
+    -**Low/Negative ROE** → Signals inefficiency or **losses**.
+    
+    #### 🔹 **Debt-to-Equity Ratio**
+    - Compares company debt to shareholder equity.
+    - **< 1** → Company is using **less leverage** (financially safer).
+    - **> 2** → Heavily reliant on **debt**, potentially risky.
+    
+    #### 🔹 **Current Ratio**
+    - Indicates ability to pay short-term obligations.
+    - **> 1** → Good **liquidity**.
+    - **< 1** → May struggle to cover short-term liabilities.
+    
+    ---
+    """, unsafe_allow_html=True)
+
