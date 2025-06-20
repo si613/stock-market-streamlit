@@ -10,7 +10,7 @@ This tool is suitable for **educational use, portfolio tracking, and basic inves
 
 ## 🔗 Live Dashboard
 
-👉 [Launch the Dashboard](https://your-streamlit-app-link.com)
+👉 [Launch the Dashboard](https://stock-market-app-9e2d5cb4qced4ea9hdbtud.streamlit.app/)
 
 ---
 
