@@ -6,8 +6,7 @@ A visually rich and interactive web application built using **Streamlit**, desig
 
 ## 🔗 Live Dashboard
 
-🌐 [Launch the App](https://your-streamlit-link.com)  
-> *(Replace with your deployed Streamlit app URL)*
+🌐 [Launch the App](https://stock-market-app-9e2d5cb4qced4ea9hdbtud.streamlit.app/)  
 
 ---
 
