@@ -208,7 +208,7 @@ if symbol:
     ten_years_ago = pd.to_datetime(datetime.now() - pd.DateOffset(years=10))
     div = div[div['Date'] >= ten_years_ago]
     div_min, div_max = div['Date'].min(), div['Date'].max()
-    div_range = st.date_input("Select dividend date range:", (div_min.date(), div_max.date()), min_value=div_min.date(), max_value=div_max.date(), key="div"), div_max.date()), min_value=div_min.date(), max_value=div_max.date(), key="div")
+    div_range = st.date_input("Select dividend date range:", (div_min.date(), div_max.date(), min_value=div_min.date(), max_value=div_max.date(), key="div"), div_max.date()), min_value=div_min.date(), max_value=div_max.date(), key="div")
         if isinstance(div_range, tuple) and len(div_range) == 2:
             div = div[(div['Date'] >= pd.to_datetime(div_range[0], utc=True)) & (div['Date'] <= pd.to_datetime(div_range[1], utc=True))]
             st.altair_chart(alt.Chart(div).mark_bar(color="#2ca02c").encode(x='Date:T', y='Dividends:Q').properties(height=300), use_container_width=True)
