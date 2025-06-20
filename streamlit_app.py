@@ -196,7 +196,7 @@ if symbols:
     view = st.radio("Select View:", ["Quarterly", "Annual"], horizontal=True)
     if view == 'Quarterly':
         fin = fetch_quarterly_financials(symbol).rename_axis('Quarter').reset_index()
-        fin = fin.tail(5)
+        fin = fin.tail(6)
         bar_size = 50
     else:
         fin = fetch_annual_financials(symbol).rename_axis('Year').reset_index()
@@ -221,43 +221,38 @@ if symbols:
 st.header('💸 Dividends')
 div = fetch_dividends(symbol)
 
+# Ensure 'Date' column is properly parsed and valid
 if not div.empty:
-    # Ensure 'Date' is datetime
-    div['Date'] = pd.to_datetime(div['Date'], errors='coerce')
-    div = div.dropna(subset=['Date'])  # Drop rows where Date conversion failed
+    try:
+        div['Date'] = pd.to_datetime(div['Date'], errors='coerce')
+        div = div.dropna(subset=['Date'])  # Remove invalid dates
+        ten_years_ago = pd.to_datetime(datetime.now() - pd.DateOffset(years=10))
 
-    ten_years_ago = pd.to_datetime(datetime.now() - pd.DateOffset(years=10))
-    div = div[div['Date'] >= ten_years_ago]
+        div = div[div['Date'] >= ten_years_ago]
 
-    if not div.empty:
-        div_min, div_max = div['Date'].min(), div['Date'].max()
+        if not div.empty:
+            div_min, div_max = div['Date'].min(), div['Date'].max()
 
-        div_range = st.date_input(
-            "Select dividend date range:",
-            value=(div_min.date(), div_max.date()),
-            min_value=div_min.date(),
-            max_value=div_max.date(),
-            key="div"
-        )
-
-        if isinstance(div_range, tuple) and len(div_range) == 2:
-            div = div[
-                (div['Date'] >= pd.to_datetime(div_range[0], utc=True)) &
-                (div['Date'] <= pd.to_datetime(div_range[1], utc=True))
-            ]
-            st.altair_chart(
-                alt.Chart(div).mark_bar(color="#2ca02c")
-                .encode(x='Date:T', y='Dividends:Q')
-                .properties(height=300),
-                use_container_width=True
+            div_range = st.date_input(
+                "Select dividend date range:",
+                value=(div_min.date(), div_max.date()),
+                min_value=div_min.date(),
+                max_value=div_max.date(),
+                key="div"
             )
-    else:
-        st.write("No dividend data available in the last 10 years.")
-else:
-    st.write("No dividend data available.")
 
-st.subheader("📘 Interpretation Guide")
-st.markdown("""
-Dividends reward shareholders. Consistent or growing dividends reflect financial health and shareholder commitment.
-""")
+            if isinstance(div_range, tuple) and len(div_range) == 2:
+                div = div[
+                    (div['Date'] >= pd.to_datetime(div_range[0], utc=True)) &
+                    (div['Date'] <= pd.to_datetime(div_range[1], utc=True))
+                ]
+
+            if not div.empty:
+                st.altair_chart(
+                    alt.Chart(div).mark_bar(color="#2ca02c")
+                    .encode(x='Date:T', y='Dividends:Q')
+                    .properties(height=300),
+                    use_container_width=True
+                )
+
 
