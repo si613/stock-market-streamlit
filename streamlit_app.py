@@ -1,12 +1,3 @@
-# requirements.txt
-# Ensure the following packages are in requirements.txt
-yfinance
-streamlit
-altair
-plotly
-watchdog
-
-# streamlit_app.py
 import streamlit as st
 import yfinance as yf
 import altair as alt
