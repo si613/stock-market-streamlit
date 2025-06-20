@@ -197,7 +197,10 @@ if symbol:
     with cols[1]:
         st.subheader("Net Income")
         if 'Net Income' in fin.columns:
-            st.altair_chart(alt.Chart(fin).mark_bar(size=bar_size, color="#ff7f0e").encode(x=alt.X(time_col, sort=None), y='Net Income').properties(height=300), use_container_width=True).mark_bar(color="#ff7f0e").encode(x=alt.X(time_col, sort=None), y='Net Income').properties(height=300), use_container_width=True)
+            st.altair_chart(alt.Chart(fin).mark_bar(size=bar_size, color="#ff7f0e").encode(
+                x=alt.X(time_col, sort=None),
+                y='Net Income'
+            ).properties(height=300), use_container_width=True).mark_bar(color="#ff7f0e").encode(x=alt.X(time_col, sort=None), y='Net Income').properties(height=300), use_container_width=True)
 
     st.subheader("📘 Interpretation Guide")
     st.markdown("""Track how revenue and income evolve. Declines may signal trouble; growth shows strength.""")
