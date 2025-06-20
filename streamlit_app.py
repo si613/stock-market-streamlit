@@ -75,13 +75,10 @@ if symbol:
     price_history = fetch_weekly_price_history(symbol).rename_axis('Date').reset_index()
 
     # Ensure 'Date' is datetime and handle invalid entries
-    try:
-        price_history['Date'] = pd.to_datetime(price_history['Date'], errors='coerce')
-        price_history = price_history.dropna(subset=['Date'])
-        date_filter = datetime.today() - timedelta(weeks=52*5)
-        price_history = price_history[price_history['Date'] >= date_filter]
-    except Exception as e:
-        st.error("Error processing date column in price history.")
+    price_history['Date'] = pd.to_datetime(price_history['Date'], errors='coerce')
+    price_history = price_history.dropna(subset=['Date'])
+    date_filter = datetime.today() - timedelta(weeks=52*5)
+    price_history = price_history[price_history['Date'] >= date_filter]
 
     st.header('📈 Price History & Candlestick Chart')
     candle_chart = go.Figure(data=[
@@ -97,6 +94,7 @@ if symbol:
     ])
     candle_chart.update_layout(
         template="plotly_white",
+        height=600,
         xaxis_rangeslider_visible=True,
         xaxis=dict(rangeselector=dict(
             buttons=list([
@@ -143,8 +141,8 @@ if symbol:
     dividends = fetch_dividends(symbol)
     if not dividends.empty:
         dividends = dividends.reset_index()
-        dividends['Date'] = pd.to_datetime(dividends['Date'], errors='coerce')
-        dividends = dividends.dropna(subset=['Date'])
+        dividends['Date'] = pd.to_datetime(dividends.index, errors='coerce')
+        dividends = dividends.dropna()
         dividends = dividends[dividends['Date'] >= datetime.today() - timedelta(weeks=52*5)]
         dividend_chart = alt.Chart(dividends).mark_bar(color="#2ca02c").encode(
             x='Date:T',
