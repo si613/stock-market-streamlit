@@ -254,5 +254,16 @@ if not div.empty:
                     .properties(height=300),
                     use_container_width=True
                 )
+            else:
+                st.write("No dividends in selected range.")
+        else:
+            st.write("No dividends in the last 10 years.")
+    except Exception as e:
+        st.error(f"Error processing dividends: {e}")
+else:
+    st.write("No dividend data available.")
 
-
+st.subheader("📘 Interpretation Guide")
+st.markdown("""
+Dividends reward shareholders. Consistent or growing dividends reflect financial health and shareholder commitment.
+""")
