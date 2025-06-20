@@ -97,15 +97,38 @@ if symbol:
         end_date = pd.to_datetime(date_range[1], utc=True)
         price = price[(price['Date'] >= start_date) & (price['Date'] <= end_date)]
 
-    st.header('📈 Candlestick Chart + Moving Averages')
-    fig = go.Figure()
-    fig.add_trace(go.Candlestick(
+    st.header('📈 Candlestick Chart')
+    fig_candle = go.Figure()
+    fig_candle.add_trace(go.Candlestick(
         x=price['Date'], open=price['Open'], high=price['High'], low=price['Low'], close=price['Close'],
         increasing_line_color='green', decreasing_line_color='red', name='Candlestick'))
-    fig.add_trace(go.Scatter(x=price['Date'], y=price['MA20'], mode='lines', name='MA20', line=dict(color='blue')))
-    fig.add_trace(go.Scatter(x=price['Date'], y=price['MA50'], mode='lines', name='MA50', line=dict(color='orange')))
-    fig.update_layout(template="plotly_white", height=600, xaxis_rangeslider_visible=True)
-    st.plotly_chart(fig, use_container_width=True)
+    fig_candle.update_layout(template="plotly_white", height=600, xaxis_rangeslider_visible=True)
+    st.plotly_chart(fig_candle, use_container_width=True)
+
+    st.subheader("📘 Interpretation Guide")
+    st.markdown("""
+    - **Candlestick Chart** shows price movement within each period (week).
+    - A **green candle** means the stock closed higher than it opened — a bullish signal.
+    - A **red candle** means the stock closed lower than it opened — a bearish signal.
+    - The **wicks** show the high and low prices during that week.
+    """)
+
+    st.header('📉 Moving Averages')
+    fig_ma = go.Figure()
+    fig_ma.add_trace(go.Scatter(x=price['Date'], y=price['Close'], mode='lines', name='Close Price', line=dict(color='#999999')))
+    fig_ma.add_trace(go.Scatter(x=price['Date'], y=price['MA20'], mode='lines', name='MA20', line=dict(color='#1f77b4')))
+    fig_ma.add_trace(go.Scatter(x=price['Date'], y=price['MA50'], mode='lines', name='MA50', line=dict(color='#ff7f0e')))
+    fig_ma.update_layout(template="plotly_white", height=500)
+    st.plotly_chart(fig_ma, use_container_width=True)
+
+    st.subheader("📘 Interpretation Guide")
+    st.markdown("""
+    - **Moving Averages (MA)** smooth out short-term price fluctuations.
+    - **MA20** reflects the short-term trend (approx 1 month if weekly data).
+    - **MA50** reflects the medium-term trend (approx 2.5 months).
+    - When the short-term MA crosses above the long-term MA, it’s a bullish signal (called a **Golden Cross**).
+    - When it crosses below, it’s bearish (called a **Death Cross**).
+    """)
 
     st.subheader("📘 Interpretation Guide")
     st.markdown("""MA lines smooth out price to highlight trends. RSI below 30 may mean oversold; above 70, overbought. MFI adds volume into the mix for stronger signals.""")
@@ -118,6 +141,23 @@ if symbol:
     ratios = fetch_key_ratios(symbol)
     st.dataframe(pd.DataFrame(ratios.items(), columns=['Metric', 'Value']).set_index('Metric'))
 
+    symbols = st.text_input("Enter symbols separated by commas:", "AAPL,MSFT,GOOGL")
+    if symbols:
+        symbol_list = [s.strip().upper() for s in symbols.split(",") if s.strip()]
+        df_list = []
+        for sym in symbol_list:
+            try:
+                info = fetch_stock_info(sym)
+                ratios = fetch_key_ratios(sym)
+                row = {"Symbol": sym, "Name": info.get("shortName", sym)}
+                row.update(ratios)
+                df_list.append(row)
+            except:
+                continue
+        if df_list:
+            compare_df = pd.DataFrame(df_list)
+            st.dataframe(compare_df.set_index("Symbol"))
+
     st.subheader("📘 Interpretation Guide")
     st.markdown("""These ratios reflect the company's valuation and financial strength. Lower PE can indicate undervaluation; ROE shows profitability; debt/equity indicates leverage.""")
 
@@ -125,16 +165,22 @@ if symbol:
     view = st.radio("Select View:", ["Quarterly", "Annual"], horizontal=True)
     if view == 'Quarterly':
         fin = fetch_quarterly_financials(symbol).rename_axis('Quarter').reset_index()
+        bar_size = 30
     else:
         fin = fetch_annual_financials(symbol).rename_axis('Year').reset_index()
         fin[fin.columns[0]] = fin[fin.columns[0]].astype(str).str[:4]
+        bar_size = 50
 
     time_col = fin.columns[0]
     cols = st.columns(2)
     with cols[0]:
         st.subheader("Total Revenue")
         if 'Total Revenue' in fin.columns:
-            st.altair_chart(alt.Chart(fin).mark_bar(color="#1f77b4").encode(x=alt.X(time_col, sort=None), y='Total Revenue').properties(height=300), use_container_width=True)
+            st.altair_chart(alt.Chart(fin).mark_bar(size=bar_size, color="#1f77b4").encode(x=alt.X(time_col, sort=None), y='Total Revenue').properties(height=300), use_container_width=True)
+    with cols[1]:
+        st.subheader("Net Income")
+        if 'Net Income' in fin.columns:
+            st.altair_chart(alt.Chart(fin).mark_bar(size=bar_size, color="#ff7f0e").encode(x=alt.X(time_col, sort=None), y='Net Income').properties(height=300), use_container_width=True)
     with cols[1]:
         st.subheader("Net Income")
         if 'Net Income' in fin.columns:
@@ -157,16 +203,4 @@ if symbol:
     st.subheader("📘 Interpretation Guide")
     st.markdown("""Dividends reward shareholders. Consistent or growing dividends reflect financial health and shareholder commitment.""")
 
-    st.header('📂 Balance Sheet Snapshot')
-    bal = fetch_balance_sheet(symbol)
-    if not bal.empty:
-        bal = bal.tail(4).reset_index().rename(columns={'index': 'Date'})
-        bal['Date'] = pd.to_datetime(bal['Date'], errors='coerce')
-        bal = bal.dropna(subset=['Date'])
-        key_cols = ['Total Assets', 'Total Liab', 'Total Stockholder Equity']
-        available = [col for col in key_cols if col in bal.columns]
-        bal_melt = bal.melt(id_vars='Date', value_vars=available)
-        st.altair_chart(alt.Chart(bal_melt).mark_line(point=True).encode(x='Date:T', y='value:Q', color='variable:N').properties(height=400), use_container_width=True)
-
-    st.subheader("📘 Interpretation Guide")
-    st.markdown("""A healthy balance sheet shows more assets than liabilities. Equity should ideally be growing over time.""")
+    
