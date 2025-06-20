@@ -6,6 +6,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 
 st.set_page_config(layout="wide", page_title="Stock Analysis Dashboard", initial_sidebar_state="expanded")
+
 st.markdown("""
     <style>
     body {
@@ -72,6 +73,7 @@ if symbol:
     based on fundamental and technical insights.
     """)
 
+    # Fetch and process price history
     price_history = fetch_weekly_price_history(symbol)
     price_history = price_history.reset_index()
     if 'Date' not in price_history.columns:
@@ -79,6 +81,7 @@ if symbol:
 
     price_history['Date'] = pd.to_datetime(price_history['Date'], errors='coerce')
     price_history = price_history.dropna(subset=['Date'])
+    price_history = price_history[price_history['Date'].apply(lambda x: isinstance(x, pd.Timestamp))]
     price_history = price_history[price_history['Date'] >= pd.Timestamp(datetime.today() - timedelta(weeks=52*5))]
 
     st.header('📈 Price History & Candlestick Chart')
@@ -146,6 +149,7 @@ if symbol:
             dividends = dividends.rename(columns={dividends.columns[0]: 'Date'})
         dividends['Date'] = pd.to_datetime(dividends['Date'], errors='coerce')
         dividends = dividends.dropna(subset=['Date'])
+        dividends = dividends[dividends['Date'].apply(lambda x: isinstance(x, pd.Timestamp))]
         dividends = dividends[dividends['Date'] >= pd.Timestamp(datetime.today() - timedelta(weeks=52*5))]
         dividend_chart = alt.Chart(dividends).mark_bar(color="#2ca02c").encode(
             x='Date:T',
