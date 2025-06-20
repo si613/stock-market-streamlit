@@ -74,11 +74,11 @@ if symbol:
     # ✅ PRICE HISTORY + SAFE DATE FILTER
     price_history = fetch_weekly_price_history(symbol)
     min_date, max_date = price_history['Date'].min(), price_history['Date'].max()
-    date_range = st.date_input("Select date range for price chart:", (min_date, max_date), min_value=min_date, max_value=max_date)
+    date_range = st.date_input("Select date range for price chart:", (min_date.date(), max_date.date()), min_value=min_date.date(), max_value=max_date.date())
 
     if isinstance(date_range, tuple) and len(date_range) == 2:
-        start_date = pd.to_datetime(date_range[0], errors='coerce')
-        end_date = pd.to_datetime(date_range[1], errors='coerce')
+        start_date = pd.to_datetime(date_range[0])
+        end_date = pd.to_datetime(date_range[1])
         filtered_price = price_history[(price_history['Date'] >= start_date) & (price_history['Date'] <= end_date)]
     else:
         st.error("Please select a valid date range.")
@@ -143,11 +143,11 @@ if symbol:
     dividends = fetch_dividends(symbol)
     if not dividends.empty:
         div_min, div_max = dividends['Date'].min(), dividends['Date'].max()
-        div_range = st.date_input("Select dividend date range:", (div_min, div_max), min_value=div_min, max_value=div_max, key="dividends")
+        div_range = st.date_input("Select dividend date range:", (div_min.date(), div_max.date()), min_value=div_min.date(), max_value=div_max.date(), key="dividends")
 
         if isinstance(div_range, tuple) and len(div_range) == 2:
-            div_start = pd.to_datetime(div_range[0], errors='coerce')
-            div_end = pd.to_datetime(div_range[1], errors='coerce')
+            div_start = pd.to_datetime(div_range[0])
+            div_end = pd.to_datetime(div_range[1])
             filtered_div = dividends[(dividends['Date'] >= div_start) & (dividends['Date'] <= div_end)]
 
             st.altair_chart(alt.Chart(filtered_div).mark_bar(color="#2ca02c").encode(
