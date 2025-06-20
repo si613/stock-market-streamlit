@@ -72,12 +72,16 @@ if symbol:
     based on fundamental and technical insights.
     """)
 
-    price_history = fetch_weekly_price_history(symbol).rename_axis('Date').reset_index()
+    price_history = fetch_weekly_price_history(symbol)
+    price_history = price_history.reset_index()
+    if 'Date' in price_history.columns:
+        price_history['Date'] = pd.to_datetime(price_history['Date'], errors='coerce')
+    else:
+        price_history = price_history.rename(columns={price_history.columns[0]: 'Date'})
+        price_history['Date'] = pd.to_datetime(price_history['Date'], errors='coerce')
 
-    # Ensure 'Date' is datetime and handle invalid entries
-    price_history['Date'] = pd.to_datetime(price_history['Date'], errors='coerce')
     price_history = price_history.dropna(subset=['Date'])
-    date_filter = pd.Timestamp(datetime.today() - timedelta(weeks=52*5))
+    date_filter = pd.to_datetime(datetime.today() - timedelta(weeks=52*5))
     price_history = price_history[price_history['Date'] >= date_filter]
 
     st.header('📈 Price History & Candlestick Chart')
@@ -141,9 +145,11 @@ if symbol:
     dividends = fetch_dividends(symbol)
     if not dividends.empty:
         dividends = dividends.reset_index()
+        if 'Date' not in dividends.columns:
+            dividends = dividends.rename(columns={dividends.columns[0]: 'Date'})
         dividends['Date'] = pd.to_datetime(dividends['Date'], errors='coerce')
         dividends = dividends.dropna(subset=['Date'])
-        dividends = dividends[dividends['Date'] >= pd.Timestamp(datetime.today() - timedelta(weeks=52*5))]
+        dividends = dividends[dividends['Date'] >= pd.to_datetime(datetime.today() - timedelta(weeks=52*5))]
         dividend_chart = alt.Chart(dividends).mark_bar(color="#2ca02c").encode(
             x='Date:T',
             y='Dividends:Q'
