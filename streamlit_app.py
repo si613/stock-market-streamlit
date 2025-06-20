@@ -156,13 +156,20 @@ if symbol:
 st.header('📊 Key Financial Ratios')
 st.markdown(f"### 📌 Financial Ratios for: `{symbol.upper()}`")
 ratios = fetch_key_ratios(symbol)
-st.dataframe(
+styled_ratios = (
     pd.DataFrame(ratios.items(), columns=['Metric', 'Value'])
-    .style.set_properties(**{'text-align': 'left'})
-    .set_table_styles([{'selector': 'th', 'props': [('text-align', 'left')]}])
+    .style
+    .set_table_styles([
+        {'selector': 'th', 'props': [('text-align', 'left'), ('padding', '4px 8px')]},
+        {'selector': 'td', 'props': [('text-align', 'left'), ('padding', '4px 8px')]}
+    ])
+    .set_properties(**{'width': '120px', 'text-align': 'left'})
 )
 
+st.dataframe(styled_ratios)
+
 # Input and comparison for multiple companies
+st.markdown("### 📌 Comparison Across Multiple Companies")
 symbols = st.text_input("Enter symbols separated by commas:", "AAPL,MSFT,GOOGL")
 if symbols:
     symbol_list = [s.strip().upper() for s in symbols.split(",") if s.strip()]
@@ -178,7 +185,6 @@ if symbols:
             continue
 
     if df_list:
-        st.markdown("### 📌 Comparison Across Multiple Companies")
         compare_df = pd.DataFrame(df_list)
         st.dataframe(compare_df.set_index("Symbol"))
 
@@ -190,7 +196,7 @@ if symbols:
     view = st.radio("Select View:", ["Quarterly", "Annual"], horizontal=True)
     if view == 'Quarterly':
         fin = fetch_quarterly_financials(symbol).rename_axis('Quarter').reset_index()
-        fin = fin.tail(4)
+        fin = fin.tail(5)
         bar_size = 50
     else:
         fin = fetch_annual_financials(symbol).rename_axis('Year').reset_index()
@@ -212,13 +218,20 @@ if symbols:
     st.subheader("📘 Interpretation Guide")
     st.markdown("""Track how revenue and income evolve. Declines may signal trouble; growth shows strength.""")
 
-    st.header('💸 Dividends')
-    div = fetch_dividends(symbol)
+st.header('💸 Dividends')
+div = fetch_dividends(symbol)
+
+if not div.empty:
+    # Ensure 'Date' is datetime
+    div['Date'] = pd.to_datetime(div['Date'], errors='coerce')
+    div = div.dropna(subset=['Date'])  # Drop rows where Date conversion failed
+
     ten_years_ago = pd.to_datetime(datetime.now() - pd.DateOffset(years=10))
     div = div[div['Date'] >= ten_years_ago]
-    div_min, div_max = div['Date'].min(), div['Date'].max()
-    
+
     if not div.empty:
+        div_min, div_max = div['Date'].min(), div['Date'].max()
+
         div_range = st.date_input(
             "Select dividend date range:",
             value=(div_min.date(), div_max.date()),
@@ -226,20 +239,25 @@ if symbols:
             max_value=div_max.date(),
             key="div"
         )
-    
+
         if isinstance(div_range, tuple) and len(div_range) == 2:
-            div = div[(div['Date'] >= pd.to_datetime(div_range[0], utc=True)) & (div['Date'] <= pd.to_datetime(div_range[1], utc=True))]
+            div = div[
+                (div['Date'] >= pd.to_datetime(div_range[0], utc=True)) &
+                (div['Date'] <= pd.to_datetime(div_range[1], utc=True))
+            ]
             st.altair_chart(
                 alt.Chart(div).mark_bar(color="#2ca02c")
                 .encode(x='Date:T', y='Dividends:Q')
                 .properties(height=300),
                 use_container_width=True
-        )
+            )
     else:
-        st.write("No dividend data available.")
+        st.write("No dividend data available in the last 10 years.")
+else:
+    st.write("No dividend data available.")
 
+st.subheader("📘 Interpretation Guide")
+st.markdown("""
+Dividends reward shareholders. Consistent or growing dividends reflect financial health and shareholder commitment.
+""")
 
-    st.subheader("📘 Interpretation Guide")
-    st.markdown("""Dividends reward shareholders. Consistent or growing dividends reflect financial health and shareholder commitment.""")
-
-    
