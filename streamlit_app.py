@@ -29,11 +29,17 @@ def fetch_annual_financials(symbol):
 
 @st.cache_data
 def fetch_weekly_price_history(symbol):
-    return yf.Ticker(symbol).history(period='5y', interval='1wk')
+    hist = yf.Ticker(symbol).history(period='5y', interval='1wk')
+    hist = hist.reset_index()
+    hist['Date'] = pd.to_datetime(hist['Date'], errors='coerce')
+    return hist.dropna(subset=['Date'])
 
 @st.cache_data
 def fetch_dividends(symbol):
-    return yf.Ticker(symbol).dividends
+    div = yf.Ticker(symbol).dividends
+    div = div.reset_index()
+    div['Date'] = pd.to_datetime(div['Date'], errors='coerce')
+    return div.dropna(subset=['Date'])
 
 @st.cache_data
 def fetch_earnings(symbol):
@@ -51,10 +57,10 @@ if symbol:
     ticker = yf.Ticker(symbol)
     information = fetch_stock_info(symbol)
     st.header('🏢 Company Information')
-    st.markdown(f"**Name:** {information.get('longName', 'N/A')}  ")
-    st.markdown(f"**Sector:** {information.get('sector', 'N/A')}  ")
-    st.markdown(f"**Industry:** {information.get('industry', 'N/A')}  ")
-    st.markdown(f"**Market Cap:** {information.get('marketCap', 0):,}  ")
+    st.markdown(f"**Name:** {information.get('longName', 'N/A')}")
+    st.markdown(f"**Sector:** {information.get('sector', 'N/A')}")
+    st.markdown(f"**Industry:** {information.get('industry', 'N/A')}")
+    st.markdown(f"**Market Cap:** {information.get('marketCap', 0):,}")
     st.markdown(f"**Website:** [{information.get('website', '')}]({information.get('website', '')})")
 
     st.header('ℹ️ Interpretation Guide')
@@ -68,30 +74,23 @@ if symbol:
     - **Dividends:** See how the company returns profits to shareholders.
     - **Earnings Trends:** Compare earnings growth and revenue surprises.
     - **Balance Sheet:** Assess financial strength with asset and debt data.
-
-    This dashboard helps both **short-term traders** and **long-term investors** make informed decisions
-    based on fundamental and technical insights.
     """)
 
-    # Fetch and process price history
+    # Price History
     price_history = fetch_weekly_price_history(symbol)
-    price_history = price_history.reset_index()
-    if 'Date' not in price_history.columns:
-        price_history = price_history.rename(columns={price_history.columns[0]: 'Date'})
-
-    price_history['Date'] = pd.to_datetime(price_history['Date'], errors='coerce')
-    price_history = price_history.dropna(subset=['Date'])
-    price_history = price_history[price_history['Date'].apply(lambda x: isinstance(x, pd.Timestamp))]
-    price_history = price_history[price_history['Date'] >= pd.Timestamp(datetime.today() - timedelta(weeks=52*5))]
+    min_date, max_date = price_history['Date'].min(), price_history['Date'].max()
+    start_date, end_date = st.date_input("Select date range for price chart:", (min_date, max_date), min_value=min_date, max_value=max_date)
+    start_date, end_date = pd.to_datetime(start_date), pd.to_datetime(end_date)
+    filtered_price = price_history[(price_history['Date'] >= start_date) & (price_history['Date'] <= end_date)]
 
     st.header('📈 Price History & Candlestick Chart')
     candle_chart = go.Figure(data=[
         go.Candlestick(
-            x=price_history['Date'],
-            open=price_history['Open'],
-            high=price_history['High'],
-            low=price_history['Low'],
-            close=price_history['Close'],
+            x=filtered_price['Date'],
+            open=filtered_price['Open'],
+            high=filtered_price['High'],
+            low=filtered_price['Low'],
+            close=filtered_price['Close'],
             increasing_line_color='green',
             decreasing_line_color='red'
         )
@@ -144,14 +143,11 @@ if symbol:
     st.header('💸 Dividends')
     dividends = fetch_dividends(symbol)
     if not dividends.empty:
-        dividends = dividends.reset_index()
-        if 'Date' not in dividends.columns:
-            dividends = dividends.rename(columns={dividends.columns[0]: 'Date'})
-        dividends['Date'] = pd.to_datetime(dividends['Date'], errors='coerce')
-        dividends = dividends.dropna(subset=['Date'])
-        dividends = dividends[dividends['Date'].apply(lambda x: isinstance(x, pd.Timestamp))]
-        dividends = dividends[dividends['Date'] >= pd.Timestamp(datetime.today() - timedelta(weeks=52*5))]
-        dividend_chart = alt.Chart(dividends).mark_bar(color="#2ca02c").encode(
+        min_div, max_div = dividends['Date'].min(), dividends['Date'].max()
+        div_start, div_end = st.date_input("Select date range for dividends:", (min_div, max_div), min_value=min_div, max_value=max_div, key="div")
+        div_start, div_end = pd.to_datetime(div_start), pd.to_datetime(div_end)
+        filtered_div = dividends[(dividends['Date'] >= div_start) & (dividends['Date'] <= div_end)]
+        dividend_chart = alt.Chart(filtered_div).mark_bar(color="#2ca02c").encode(
             x='Date:T',
             y='Dividends:Q'
         ).properties(height=300)
