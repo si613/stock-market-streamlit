@@ -77,7 +77,7 @@ if symbol:
     # Ensure 'Date' is datetime and handle invalid entries
     price_history['Date'] = pd.to_datetime(price_history['Date'], errors='coerce')
     price_history = price_history.dropna(subset=['Date'])
-    date_filter = pd.to_datetime(datetime.today() - timedelta(weeks=52*5))
+    date_filter = pd.Timestamp(datetime.today() - timedelta(weeks=52*5))
     price_history = price_history[price_history['Date'] >= date_filter]
 
     st.header('📈 Price History & Candlestick Chart')
@@ -143,7 +143,7 @@ if symbol:
         dividends = dividends.reset_index()
         dividends['Date'] = pd.to_datetime(dividends['Date'], errors='coerce')
         dividends = dividends.dropna(subset=['Date'])
-        dividends = dividends[dividends['Date'] >= pd.to_datetime(datetime.today() - timedelta(weeks=52*5))]
+        dividends = dividends[dividends['Date'] >= pd.Timestamp(datetime.today() - timedelta(weeks=52*5))]
         dividend_chart = alt.Chart(dividends).mark_bar(color="#2ca02c").encode(
             x='Date:T',
             y='Dividends:Q'
