@@ -29,15 +29,13 @@ def fetch_annual_financials(symbol):
 
 @st.cache_data
 def fetch_weekly_price_history(symbol):
-    hist = yf.Ticker(symbol).history(period='5y', interval='1wk')
-    hist = hist.reset_index()
+    hist = yf.Ticker(symbol).history(period='5y', interval='1wk').reset_index()
     hist['Date'] = pd.to_datetime(hist['Date'], errors='coerce')
     return hist.dropna(subset=['Date'])
 
 @st.cache_data
 def fetch_dividends(symbol):
-    div = yf.Ticker(symbol).dividends
-    div = div.reset_index()
+    div = yf.Ticker(symbol).dividends.reset_index()
     div['Date'] = pd.to_datetime(div['Date'], errors='coerce')
     return div.dropna(subset=['Date'])
 
@@ -65,33 +63,23 @@ if symbol:
 
     st.header('ℹ️ Interpretation Guide')
     st.markdown("""
-    **How to Use This Dashboard for Stock Analysis:**
-
-    - **Company Info:** Understand what the business does, its size, and sector.
-    - **Candlestick Charts:** Analyze price trends and market sentiment visually.
-    - **Revenue & Income:** Evaluate how fast the company is growing and how profitable it is.
-    - **Quarterly vs Annual:** Use quarterly to spot recent changes; use annual for long-term trends.
-    - **Dividends:** See how the company returns profits to shareholders.
-    - **Earnings Trends:** Compare earnings growth and revenue surprises.
-    - **Balance Sheet:** Assess financial strength with asset and debt data.
+    - **Company Info:** Overview of sector, size, and industry.
+    - **Candlestick Charts:** Spot price trends and sentiment.
+    - **Revenue & Income:** Financial performance over time.
+    - **Dividends:** Track shareholder returns.
+    - **Earnings Trends:** Compare historical earnings and revenue.
+    - **Balance Sheet:** Understand company stability.
     """)
 
-    # Price History
+    # ✅ PRICE HISTORY + SAFE DATE FILTER
     price_history = fetch_weekly_price_history(symbol)
     min_date, max_date = price_history['Date'].min(), price_history['Date'].max()
     date_range = st.date_input("Select date range for price chart:", (min_date, max_date), min_value=min_date, max_value=max_date)
 
-    # ✅ INJECTED DATETIME FIX
     if isinstance(date_range, tuple) and len(date_range) == 2:
         start_date = pd.to_datetime(date_range[0], errors='coerce')
         end_date = pd.to_datetime(date_range[1], errors='coerce')
-
-        price_history['Date'] = pd.to_datetime(price_history['Date'], errors='coerce')
-        price_history = price_history.dropna(subset=['Date'])
-
-        filtered_price = price_history[
-            (price_history['Date'] >= start_date) & (price_history['Date'] <= end_date)
-        ]
+        filtered_price = price_history[(price_history['Date'] >= start_date) & (price_history['Date'] <= end_date)]
     else:
         st.error("Please select a valid date range.")
         st.stop()
@@ -113,12 +101,12 @@ if symbol:
         height=600,
         xaxis_rangeslider_visible=True,
         xaxis=dict(rangeselector=dict(
-            buttons=list([
+            buttons=[
                 dict(count=3, label="3m", step="month", stepmode="backward"),
                 dict(count=6, label="6m", step="month", stepmode="backward"),
                 dict(count=1, label="1y", step="year", stepmode="backward"),
                 dict(step="all")
-            ])
+            ]
         ))
     )
     st.plotly_chart(candle_chart, use_container_width=True)
@@ -138,37 +126,34 @@ if symbol:
     with revenue_col:
         st.subheader("Total Revenue")
         if 'Total Revenue' in df.columns:
-            revenue_chart = alt.Chart(df).mark_bar(color="#1f77b4").encode(
+            st.altair_chart(alt.Chart(df).mark_bar(color="#1f77b4").encode(
                 x=alt.X(time_col, sort=None),
                 y='Total Revenue'
-            ).properties(height=300)
-            st.altair_chart(revenue_chart, use_container_width=True)
+            ).properties(height=300), use_container_width=True)
 
     with income_col:
         st.subheader("Net Income")
         if 'Net Income' in df.columns:
-            income_chart = alt.Chart(df).mark_bar(color="#ff7f0e").encode(
+            st.altair_chart(alt.Chart(df).mark_bar(color="#ff7f0e").encode(
                 x=alt.X(time_col, sort=None),
                 y='Net Income'
-            ).properties(height=300)
-            st.altair_chart(income_chart, use_container_width=True)
+            ).properties(height=300), use_container_width=True)
 
     st.header('💸 Dividends')
     dividends = fetch_dividends(symbol)
     if not dividends.empty:
-        min_div, max_div = dividends['Date'].min(), dividends['Date'].max()
-        div_range = st.date_input("Select date range for dividends:", (min_div, max_div), min_value=min_div, max_value=max_div, key="div")
-        
+        div_min, div_max = dividends['Date'].min(), dividends['Date'].max()
+        div_range = st.date_input("Select dividend date range:", (div_min, div_max), min_value=div_min, max_value=div_max, key="dividends")
+
         if isinstance(div_range, tuple) and len(div_range) == 2:
             div_start = pd.to_datetime(div_range[0], errors='coerce')
             div_end = pd.to_datetime(div_range[1], errors='coerce')
             filtered_div = dividends[(dividends['Date'] >= div_start) & (dividends['Date'] <= div_end)]
 
-            dividend_chart = alt.Chart(filtered_div).mark_bar(color="#2ca02c").encode(
+            st.altair_chart(alt.Chart(filtered_div).mark_bar(color="#2ca02c").encode(
                 x='Date:T',
                 y='Dividends:Q'
-            ).properties(height=300)
-            st.altair_chart(dividend_chart, use_container_width=True)
+            ).properties(height=300), use_container_width=True)
     else:
         st.write("No dividend data available.")
 
@@ -197,11 +182,10 @@ if symbol:
         key_cols = ['Total Assets', 'Total Liab', 'Total Stockholder Equity']
         available_cols = [col for col in key_cols if col in balance.columns]
         balance_long = balance.melt(id_vars='Date', value_vars=available_cols)
-        balance_chart = alt.Chart(balance_long).mark_line(point=True).encode(
+        st.altair_chart(alt.Chart(balance_long).mark_line(point=True).encode(
             x='Date:T',
             y='value:Q',
             color='variable:N'
-        ).properties(height=400)
-        st.altair_chart(balance_chart, use_container_width=True)
+        ).properties(height=400), use_container_width=True)
     else:
         st.write("No balance sheet data available.")
