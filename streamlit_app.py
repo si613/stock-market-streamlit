@@ -190,13 +190,49 @@ if symbols:
 
 
     st.subheader("📘 Interpretation Guide")
-    st.markdown("""These ratios reflect the company's valuation and financial strength. Lower PE can indicate undervaluation; ROE shows profitability; debt/equity indicates leverage.""")
+    
+    st.markdown("""
+    ### 📘 Interpretation Guide: Key Financial Ratios
+    
+    These ratios help assess a company's **valuation**, **profitability**, and **financial strength**.
+    
+    ---
+    
+    #### 🔹 **PE Ratio (Price-to-Earnings)**
+    - Shows how much investors pay for ₹1 of earnings.
+    - **Lower PE** → May indicate **undervaluation**.
+    - **Higher PE** → Market expects growth or the stock may be **overvalued**.
+    
+    #### 🔹 **PB Ratio (Price-to-Book)**
+    - Compares market price to the company's net asset value.
+    - **PB < 1** → Possibly **undervalued**.
+    - **PB > 3** → May suggest **growth potential** or **overvaluation**.
+    
+    #### 🔹 **ROE (Return on Equity)**
+    - Measures how efficiently a company uses shareholder funds.
+    - **ROE > 15%** → Indicates strong **profitability**.
+    - **Low/Negative ROE** → Signals inefficiency or **losses**.
+    
+    #### 🔹 **Debt-to-Equity Ratio**
+    - Compares company debt to shareholder equity.
+    - **< 1** → Company is using **less leverage** (financially safer).
+    - **> 2** → Heavily reliant on **debt**, potentially risky.
+    
+    #### 🔹 **Current Ratio**
+    - Indicates ability to pay short-term obligations.
+    - **> 1** → Good **liquidity**.
+    - **< 1** → May struggle to cover short-term liabilities.
+    
+    ---
+    """, unsafe_allow_html=True)
 
+
+    
     st.header('📊 Financial Performance')
     view = st.radio("Select View:", ["Quarterly", "Annual"], horizontal=True)
     if view == 'Quarterly':
         fin = fetch_quarterly_financials(symbol).rename_axis('Quarter').reset_index()
-        fin = fin.tail(6)
+        fin = fin.tail(5)
         bar_size = 50
     else:
         fin = fetch_annual_financials(symbol).rename_axis('Year').reset_index()
@@ -221,12 +257,14 @@ if symbols:
 st.header('💸 Dividends')
 div = fetch_dividends(symbol)
 
-# Ensure 'Date' column is properly parsed and valid
 if not div.empty:
     try:
+        # Ensure 'Date' is parsed and timezone-naive
         div['Date'] = pd.to_datetime(div['Date'], errors='coerce')
-        div = div.dropna(subset=['Date'])  # Remove invalid dates
-        ten_years_ago = pd.to_datetime(datetime.now() - pd.DateOffset(years=10))
+        div['Date'] = div['Date'].dt.tz_localize(None)  # <-- remove timezone
+
+        div = div.dropna(subset=['Date'])
+        ten_years_ago = datetime.now() - pd.DateOffset(years=10)  # also timezone-naive
 
         div = div[div['Date'] >= ten_years_ago]
 
@@ -242,10 +280,9 @@ if not div.empty:
             )
 
             if isinstance(div_range, tuple) and len(div_range) == 2:
-                div = div[
-                    (div['Date'] >= pd.to_datetime(div_range[0], utc=True)) &
-                    (div['Date'] <= pd.to_datetime(div_range[1], utc=True))
-                ]
+                start = pd.to_datetime(div_range[0])
+                end = pd.to_datetime(div_range[1])
+                div = div[(div['Date'] >= start) & (div['Date'] <= end)]
 
             if not div.empty:
                 st.altair_chart(
