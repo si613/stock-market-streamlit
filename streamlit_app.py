@@ -152,27 +152,36 @@ if symbol:
     - MFI is helpful for validating RSI signals with volume confirmation.
     """)
 
-    st.header('📊 Key Financial Ratios')
-    st.markdown(f"### 📌 Financial Ratios for: `{symbol.upper()}`")
-    st.dataframe(pd.DataFrame(ratios.items(), columns=['Metric', 'Value']).style.set_properties(**{'text-align': 'left'}).set_table_styles([{ 'selector': 'th', 'props': [('text-align', 'left')]}]))
+# Display financial ratios for the main stock
+st.header('📊 Key Financial Ratios')
+st.markdown(f"### 📌 Financial Ratios for: `{symbol.upper()}`")
+ratios = fetch_key_ratios(symbol)
+st.dataframe(
+    pd.DataFrame(ratios.items(), columns=['Metric', 'Value'])
+    .style.set_properties(**{'text-align': 'left'})
+    .set_table_styles([{'selector': 'th', 'props': [('text-align', 'left')]}])
+)
 
-    symbols = st.text_input("Enter symbols separated by commas:", "AAPL,MSFT,GOOGL")
-    if symbols:
-        symbol_list = [s.strip().upper() for s in symbols.split(",") if s.strip()]
-        df_list = []
-        for sym in symbol_list:
-            try:
-                info = fetch_stock_info(sym)
-                ratios = fetch_key_ratios(sym)
-                row = {"Symbol": sym, "Name": info.get("shortName", sym)}
-                row.update(ratios)
-                df_list.append(row)
-            except:
-                continue
-        if df_list:
-            st.markdown("### 📌 Comparison Across Multiple Companies")
-            compare_df = pd.DataFrame(df_list)
-            st.dataframe(compare_df.set_index("Symbol"))
+# Input and comparison for multiple companies
+symbols = st.text_input("Enter symbols separated by commas:", "AAPL,MSFT,GOOGL")
+if symbols:
+    symbol_list = [s.strip().upper() for s in symbols.split(",") if s.strip()]
+    df_list = []
+    for sym in symbol_list:
+        try:
+            info = fetch_stock_info(sym)
+            ratios = fetch_key_ratios(sym)
+            row = {"Symbol": sym, "Name": info.get("shortName", sym)}
+            row.update(ratios)
+            df_list.append(row)
+        except:
+            continue
+
+    if df_list:
+        st.markdown("### 📌 Comparison Across Multiple Companies")
+        compare_df = pd.DataFrame(df_list)
+        st.dataframe(compare_df.set_index("Symbol"))
+
 
     st.subheader("📘 Interpretation Guide")
     st.markdown("""These ratios reflect the company's valuation and financial strength. Lower PE can indicate undervaluation; ROE shows profitability; debt/equity indicates leverage.""")
