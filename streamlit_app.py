@@ -183,9 +183,11 @@ if symbol:
 
 
     st.subheader("📘 Interpretation Guide")
-    st.markdown("""Track how revenue and income evolve. Declines may signal trouble; growth shows strength.
-    
-    ---
+    st.markdown("""
+    Track how revenue and income evolve. 
+    Declines may signal trouble; growth shows strength.
+
+---
     """)
 
 st.header('💸 Dividends')
