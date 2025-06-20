@@ -185,7 +185,6 @@ if symbol:
     st.subheader("📘 Interpretation Guide")
     st.markdown("""Track how revenue and income evolve. Declines may signal trouble; growth shows strength.
     
-    
     ---
     """)
 
@@ -286,25 +285,25 @@ if symbols:
     
     These ratios help assess a company's **valuation**, **profitability**, and **financial strength**.
     
-    #### 🔹 **PE Ratio (Price-to-Earnings)**
+    ##### 🔹 **PE Ratio (Price-to-Earnings)**
     - Shows how much investors pay for ₹1 of earnings. 
     - **Lower PE** → May indicate **undervaluation**. **Higher PE** → Market expects growth or the stock may be **overvalued**.
     
-    #### 🔹 **PB Ratio (Price-to-Book)**
+    ##### 🔹 **PB Ratio (Price-to-Book)**
     - Compares market price to the company's net asset value.
     - **PB < 1** → Possibly **undervalued**. **PB > 3** → May suggest **growth potential** or **overvaluation**.
     
-    #### 🔹 **ROE (Return on Equity)**
+    ##### 🔹 **ROE (Return on Equity)**
     - Measures how efficiently a company uses shareholder funds.
     - **ROE > 15%** → Indicates strong **profitability**.
     -**Low/Negative ROE** → Signals inefficiency or **losses**.
     
-    #### 🔹 **Debt-to-Equity Ratio**
+    ##### 🔹 **Debt-to-Equity Ratio**
     - Compares company debt to shareholder equity.
     - **< 1** → Company is using **less leverage** (financially safer).
     - **> 2** → Heavily reliant on **debt**, potentially risky.
     
-    #### 🔹 **Current Ratio**
+    ##### 🔹 **Current Ratio**
     - Indicates ability to pay short-term obligations.
     - **> 1** → Good **liquidity**.
     - **< 1** → May struggle to cover short-term liabilities.
