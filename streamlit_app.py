@@ -79,9 +79,22 @@ if symbol:
     # Price History
     price_history = fetch_weekly_price_history(symbol)
     min_date, max_date = price_history['Date'].min(), price_history['Date'].max()
-    start_date, end_date = st.date_input("Select date range for price chart:", (min_date, max_date), min_value=min_date, max_value=max_date)
-    start_date, end_date = pd.to_datetime(start_date), pd.to_datetime(end_date)
-    filtered_price = price_history[(price_history['Date'] >= start_date) & (price_history['Date'] <= end_date)]
+    date_range = st.date_input("Select date range for price chart:", (min_date, max_date), min_value=min_date, max_value=max_date)
+
+    # ✅ INJECTED DATETIME FIX
+    if isinstance(date_range, tuple) and len(date_range) == 2:
+        start_date = pd.to_datetime(date_range[0], errors='coerce')
+        end_date = pd.to_datetime(date_range[1], errors='coerce')
+
+        price_history['Date'] = pd.to_datetime(price_history['Date'], errors='coerce')
+        price_history = price_history.dropna(subset=['Date'])
+
+        filtered_price = price_history[
+            (price_history['Date'] >= start_date) & (price_history['Date'] <= end_date)
+        ]
+    else:
+        st.error("Please select a valid date range.")
+        st.stop()
 
     st.header('📈 Price History & Candlestick Chart')
     candle_chart = go.Figure(data=[
@@ -144,14 +157,18 @@ if symbol:
     dividends = fetch_dividends(symbol)
     if not dividends.empty:
         min_div, max_div = dividends['Date'].min(), dividends['Date'].max()
-        div_start, div_end = st.date_input("Select date range for dividends:", (min_div, max_div), min_value=min_div, max_value=max_div, key="div")
-        div_start, div_end = pd.to_datetime(div_start), pd.to_datetime(div_end)
-        filtered_div = dividends[(dividends['Date'] >= div_start) & (dividends['Date'] <= div_end)]
-        dividend_chart = alt.Chart(filtered_div).mark_bar(color="#2ca02c").encode(
-            x='Date:T',
-            y='Dividends:Q'
-        ).properties(height=300)
-        st.altair_chart(dividend_chart, use_container_width=True)
+        div_range = st.date_input("Select date range for dividends:", (min_div, max_div), min_value=min_div, max_value=max_div, key="div")
+        
+        if isinstance(div_range, tuple) and len(div_range) == 2:
+            div_start = pd.to_datetime(div_range[0], errors='coerce')
+            div_end = pd.to_datetime(div_range[1], errors='coerce')
+            filtered_div = dividends[(dividends['Date'] >= div_start) & (dividends['Date'] <= div_end)]
+
+            dividend_chart = alt.Chart(filtered_div).mark_bar(color="#2ca02c").encode(
+                x='Date:T',
+                y='Dividends:Q'
+            ).properties(height=300)
+            st.altair_chart(dividend_chart, use_container_width=True)
     else:
         st.write("No dividend data available.")
 
