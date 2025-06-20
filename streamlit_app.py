@@ -1,3 +1,12 @@
+# requirements.txt
+# Ensure the following packages are in requirements.txt
+yfinance
+streamlit
+altair
+plotly
+watchdog
+
+# streamlit_app.py
 import streamlit as st
 import yfinance as yf
 import altair as alt
@@ -73,8 +82,15 @@ if symbol:
     """)
 
     price_history = fetch_weekly_price_history(symbol).rename_axis('Date').reset_index()
-    price_history['Date'] = pd.to_datetime(price_history['Date'])
-    price_history = price_history[price_history['Date'] >= datetime.today() - timedelta(weeks=52*5)]
+
+    # Ensure 'Date' is datetime and handle invalid entries
+    try:
+        price_history['Date'] = pd.to_datetime(price_history['Date'], errors='coerce')
+        price_history = price_history.dropna(subset=['Date'])
+        date_filter = datetime.today() - timedelta(weeks=52*5)
+        price_history = price_history[price_history['Date'] >= date_filter]
+    except Exception as e:
+        st.error("Error processing date column in price history.")
 
     st.header('📈 Price History & Candlestick Chart')
     candle_chart = go.Figure(data=[
@@ -136,7 +152,8 @@ if symbol:
     dividends = fetch_dividends(symbol)
     if not dividends.empty:
         dividends = dividends.reset_index()
-        dividends['Date'] = pd.to_datetime(dividends['Date'])
+        dividends['Date'] = pd.to_datetime(dividends['Date'], errors='coerce')
+        dividends = dividends.dropna(subset=['Date'])
         dividends = dividends[dividends['Date'] >= datetime.today() - timedelta(weeks=52*5)]
         dividend_chart = alt.Chart(dividends).mark_bar(color="#2ca02c").encode(
             x='Date:T',
@@ -166,7 +183,8 @@ if symbol:
     balance = fetch_balance_sheet(symbol)
     if not balance.empty:
         balance = balance.tail(5).reset_index().rename(columns={'index': 'Date'})
-        balance['Date'] = pd.to_datetime(balance['Date'])
+        balance['Date'] = pd.to_datetime(balance['Date'], errors='coerce')
+        balance = balance.dropna(subset=['Date'])
         key_cols = ['Total Assets', 'Total Liab', 'Total Stockholder Equity']
         available_cols = [col for col in key_cols if col in balance.columns]
         balance_long = balance.melt(id_vars='Date', value_vars=available_cols)
